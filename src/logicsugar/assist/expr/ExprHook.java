@@ -1,5 +1,6 @@
 package logicsugar.assist.expr;
 
+import logicsugar.DebugConfig; //For debug!
 import arc.*;
 import arc.func.*;
 import arc.scene.*;
@@ -81,6 +82,9 @@ public class ExprHook{
 
     /** 折叠主体（调用方已进入数组注册表上下文）。 */
     private static void foldAllInContext(LCanvas canvas, Seq<Element> children){
+        if(DebugConfig.DEBUG){
+            Log.info("[ExprHook] FOLD START children=" + children.size);
+        }
         saveUIAll(canvas);
 
         boolean changed = false;
@@ -204,11 +208,30 @@ public class ExprHook{
                     exprStmt.expr = expr;
                     exprStmt.lastOps = ops;
 
+                    if(DebugConfig.DEBUG){
+                        Log.info("[ExprHook] FOLD REPLACE"
+                            + " i=" + i
+                            + " chainLen=" + chainLen
+                            + " dest=" + exprStmt.dest
+                            + " expr=" + exprStmt.expr
+                            + " before=" + children.size);
+                    }
+
                     for(int k = 0; k < chainLen; k++){
                         ((StatementElem)children.get(i)).remove();
                     }
 
+                    if(DebugConfig.DEBUG){
+                        Log.info("[ExprHook] FOLD AFTER REMOVE"
+                            + " children=" + children.size);
+                    }
+
                     canvas.addAt(i, exprStmt);
+
+                    if(DebugConfig.DEBUG){
+                        Log.info("[ExprHook] FOLD AFTER ADD"
+                            + " children=" + children.size);
+                    }
 
                     changed = true;
                 }else{
@@ -229,7 +252,11 @@ public class ExprHook{
             // 行号由 LogicDragLayout.layout() 自动更新，无需手动调用
             SugarCanvas.markJumpHeightsDirty(canvas);
             Log.debug("[LogicAssist] Expression chains folded");
+       
         }
+      if(DebugConfig.DEBUG){
+            Log.info("[ExprHook] FOLD END children=" + children.size);
+      }
     }
 
     // ===== 展开：ExprStatement → op 链 =====
@@ -286,6 +313,12 @@ public class ExprHook{
     }
 
     public static void unfoldAll(LCanvas canvas){
+        if(DebugConfig.DEBUG){
+            Log.info(
+                "[ExprHook] UNFOLD begin statements="
+                + canvas.statements.getChildren().size
+            );
+        }
         if(canvas == null || canvas.statements == null) return;
 
         Seq<Element> children = canvas.statements.getChildren();
@@ -298,6 +331,12 @@ public class ExprHook{
         // 对着同一份声明表（保存拦截的严格口径由 write()/compile 阶段负责）
         ArrayRegistry snapshot = ArrayRegistry.canvasRegistry(canvas);
         ArrayRegistry previousArrays = ArrayRegistry.enter(snapshot == null ? ArrayRegistry.empty() : snapshot);
+        if(DebugConfig.DEBUG){
+            Log.info(
+                "[ExprHook] UNFOLD end statements="
+                + canvas.statements.getChildren().size
+            );
+        }
         try{
             unfoldAllInContext(canvas, children);
         }finally{
@@ -327,6 +366,17 @@ public class ExprHook{
                 // 校验函数名，否则未定义函数会被展开成 will-fail 的 funccall（编译时才报错），
                 // 与编辑期标红、保存拦截的行为不一致。
                 ops = ExprCompiler.compile(exprStmt.dest, exprStmt.expr, ExprStatement.functionChecker(), emitAsserts);
+                if(DebugConfig.DEBUG){
+                    Log.info("[ExprHook] UNFOLD Expr dest=" + exprStmt.dest
+                        + " expr=" + exprStmt.expr
+                        + " ops=" + ops.size());
+
+                    for(int q = 0; q < ops.size(); q++){
+                        Log.info("[ExprHook] UNFOLD op[" + q + "]="
+                            + ops.get(q).getClass().getSimpleName()
+                            + " text=" + ops.get(q).toText());
+                    }
+                }
             }catch(Exception e){
                 // 编译失败：保留 ExprStatement 不展开，write() 会输出 lastOps
                 // 避免 unfold→fold 循环用 lastOps 重建 ExprStatement 覆盖错误的 expr
@@ -340,11 +390,27 @@ public class ExprHook{
                 preceding.add(0, prev.st);
             }
             List<LStatement> statements = toStatements(ops, preceding, emitAsserts);
+            if(DebugConfig.DEBUG){
+                Log.info("[ExprHook] UNFOLD statements=" + statements.size());
+            }
+            if(statements.isEmpty()){
+                if(DebugConfig.DEBUG){
+                    Log.warn("[ExprHook] UNFOLD produced 0 statements; keeping ExprStatement"
+                        + " dest=" + exprStmt.dest
+                        + " expr=" + exprStmt.expr);
+                }
+                continue;
+            }
 
             elem.remove();
+
             for(int k = 0; k < statements.size(); k++){
                 canvas.addAt(i + k, statements.get(k));
             }
+//            elem.remove();
+//            for(int k = 0; k < statements.size(); k++){
+//                canvas.addAt(i + k, statements.get(k));
+//            }
 
             changed = true;
             i += statements.size() - 1;
@@ -421,7 +487,17 @@ public class ExprHook{
         if(line instanceof ExprCompiler.ReadLine read){
             // 数组下标读展开为原版 read 卡（read <output> <target> <address>），
             // 保存的文本是纯原版指令
+            //Enviar o StackTrace no log para debug!
             ReadStatement st = new ReadStatement();
+            if(DebugConfig.DEBUG){
+
+              StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+
+              for(int i = 2; i < Math.min(trace.length, 12); i++){
+                  Log.info("[ExprHook] CALL " + trace[i]);
+              }
+            }
+            //--------------------------------------
             st.output = read.dest;
             st.target = read.a;
             st.address = read.b;
@@ -437,6 +513,7 @@ public class ExprHook{
         }
         if(line instanceof ExprCompiler.RawLine){
             return null; // 非断言 RawLine（当前不存在）：编辑器路径跳过，不崩溃
+                         //Why?
         }
         ExprCompiler.OpLine op = (ExprCompiler.OpLine)line;
         OperationStatement st = new OperationStatement();

@@ -38,6 +38,9 @@ public class LogicSugarMod extends Mod{
 
     @Override
     public void init(){
+        if(DebugConfig.DEBUG){
+          Log.info("[LogicSugar DEBUG] debug mode enabled");
+        }
         registerStatements();
         SugarFunctions.setLibrarySource(FunctionLibrary::index);
         on(ClientLoadEvent.class, event -> Core.app.post(() -> {

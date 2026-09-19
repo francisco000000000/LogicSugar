@@ -1,10 +1,64 @@
 apply plugin: "java"
 
-version = "5.1.2"
+version = "5.1.2-ouf"
+
+def lsDebug = project.hasProperty("lsDebug")
+def modVersion = lsDebug ? "${version}-dev" : version
+
+def generatedDir = layout.buildDirectory.dir("generated/sources/debug").get().asFile
+
 sourceSets{
-    main.java.srcDirs = ["src"]
+    main.java.srcDirs = ["src", generatedDir]
     test.java.srcDirs = ["test"]
 }
+
+tasks.register("generateDebugConfig"){
+    inputs.property("lsDebug", lsDebug)
+    outputs.dir generatedDir
+
+    doLast{
+        def dir = new File(generatedDir, "logicsugar")
+        dir.mkdirs()
+
+        new File(dir, "DebugConfig.java").text = """\
+package logicsugar;
+
+import arc.util.Log;
+
+public final class DebugConfig{
+    public static final boolean DEBUG = ${lsDebug};
+
+    private DebugConfig(){}
+
+    public static void log(String message){
+        if(DEBUG) Log.info(message);
+    }
+}
+"""
+    }
+}
+
+tasks.register("generateModJson"){
+    def output = layout.buildDirectory.file("generated/mod/mod.json")
+
+
+    inputs.property("modVersion", modVersion)
+    outputs.file(output)
+
+    doLast{
+        def text = file("mod.json").getText("UTF-8")
+
+        text = text.replace("{version}", modVersion)
+
+        output.get().asFile.parentFile.mkdirs()
+        output.get().asFile.setText(text, "UTF-8")
+    }
+}
+
+tasks.named("compileJava").configure{
+    dependsOn("generateDebugConfig")
+}
+
 
 repositories{
     mavenCentral()
@@ -21,7 +75,7 @@ ext{
 }
 
 dependencies{
-    def mindustryJar = project.findProperty("mindustryJar") ?: "../Mindustry-master/desktop/build/libs/Mindustry.jar"
+    def mindustryJar = project.findProperty("mindustryJar") ?: "./mindustry.jar"
     compileOnly files(mindustryJar)
     testImplementation files(mindustryJar)
 }
@@ -33,9 +87,20 @@ tasks.withType(JavaCompile).configureEach{
 
 jar{
     archiveFileName = "LogicSugar-v${version}-desktop.jar"
-    from(projectDir){ include "mod.json" }
-    from(projectDir){ include "icon.png" }
-    from("assets/"){ include "**" }
+
+    dependsOn("generateModJson")
+
+    from(layout.buildDirectory.file("generated/mod/mod.json")){
+        into("")
+    }
+
+    from(projectDir){
+        include "icon.png"
+    }
+
+    from("assets/"){
+        include "**"
+    }
 }
 
 tasks.register("releaseZip", Zip){
@@ -372,7 +437,13 @@ tasks.register("jarAndroid", Jar){
     archiveFileName = "LogicSugar-v${version}-android.jar"
     dependsOn tasks.named("dexAndroid")
     from(androidDexOutDir){ include "classes.dex" }
-    from(projectDir){ include "mod.json" }
+    //from(projectDir){ include "mod.json" } //Denovo,usa a versão antiga
+    dependsOn("generateModJson")
+
+    from(layout.buildDirectory.file("generated/mod/mod.json")){
+        into("")
+    }
+    //-------------------------------------------------------------------
     from(projectDir){ include "icon.png" }
     from("assets/"){ include "**" }
 }
@@ -408,4 +479,5 @@ tasks.register("copyAndroidJar", Copy){
 tasks.named("deploy").configure{
     finalizedBy tasks.named("copyAndroidJar")
 }
+
 

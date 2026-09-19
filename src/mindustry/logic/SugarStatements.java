@@ -1,5 +1,6 @@
 package mindustry.logic;
 
+import logicsugar.DebugConfig; //For debug!  
 import arc.Core;
 import arc.func.Cons;
 import arc.graphics.Color;

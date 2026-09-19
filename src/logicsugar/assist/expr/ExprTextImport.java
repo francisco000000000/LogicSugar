@@ -1,5 +1,7 @@
 package logicsugar.assist.expr;
+import arc.util.Log;
 
+import logicsugar.DebugConfig;
 import arc.scene.Element;
 import arc.struct.Seq;
 import mindustry.gen.LogicIO;
@@ -135,11 +137,61 @@ public final class ExprTextImport{
             if(child instanceof StatementElem elem){
                 ExprStatement expr = plan.statementFor(elem.st);
                 if(expr != null){
+                    //----------------
+                    if(DebugConfig.DEBUG){
+                        Log.info("[ExprImport] BEFORE replace i=" + i
+                            + " size=" + children.size
+                            + " st=" + elem.st.getClass().getName());
+                    }
+
                     elem.remove();
                     canvas.addAt(i, expr);
+
+                    if(DebugConfig.DEBUG){
+                        Log.info("[ExprImport] AFTER replace size=" + children.size
+                            + " at=" + i
+                            + " class=" + children.get(i).getClass().getName());
+
+                        if(children.get(i) instanceof StatementElem added){
+                            Log.info("[ExprImport] ADDED st="
+                                + added.st.getClass().getName()
+                                + " dest=" + ((ExprStatement)added.st).dest
+                                + " expr=" + ((ExprStatement)added.st).expr);
+                        }
+                    }
+
                     expr.setupUI();
                     applied++;
                     continue;
+//                    if(DebugConfig.DEBUG){
+//                      Log.info("[ExprImport] BEFORE remove i=" + i
+//                          + " size=" + children.size
+//                          + " st=" + elem.st.getClass().getName());
+//
+//                      elem.remove();
+//
+//                      Log.info("[ExprImport] AFTER remove size=" + children.size);
+//
+//                      canvas.addAt(i, expr);
+//
+//                      Log.info("[ExprImport] AFTER add size=" + children.size
+//                          + " at=" + i
+//                          + " class=" + children.get(i).getClass().getName());
+//
+//                      if(children.get(i) instanceof StatementElem added){
+//                          Log.info("[ExprImport] ADDED st="
+//                              + added.st.getClass().getName()
+//                              + " dest=" + ((ExprStatement)added.st).dest
+//                              + " expr=" + ((ExprStatement)added.st).expr);
+//                      }
+//                    }
+//                    //--------------
+//                    elem.remove();
+//                    canvas.addAt(i, expr);
+//                    //canvas.statements.addAt(i, expr);
+//                    expr.setupUI();
+//                    applied++;
+//                    continue;
                 }
             }
             i++;

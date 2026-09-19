@@ -1,5 +1,7 @@
 package logicsugar.assist.expr;
 
+import logicsugar.DebugConfig;
+import arc.util.Log;
 import arc.*;
 import arc.graphics.*;
 import arc.input.*;
@@ -47,6 +49,9 @@ public class ExprStatement extends LStatement{
 
     @Override
     public void write(StringBuilder builder){
+        if(expr == null || expr.isBlank()){
+          return; //ele retorna pra não EXPLODIR/Crash!
+        }
         List<ExprCompiler.Line> lines;
         try{
             lines = ExprCompiler.compile(dest, expr, functionChecker());
@@ -88,6 +93,9 @@ public class ExprStatement extends LStatement{
 
     @Override
     public void build(Table table){
+        if(DebugConfig.DEBUG){
+          Log.info("[ExprStatement] BUILD dest=" + dest + " expr=" + expr);
+        }
         // 重新验证：lastError 不为 null 时，expr 可能已被外部修正（如 foldAll），需重新编译检查
         if(lastError != null){
             try{
@@ -160,7 +168,8 @@ public class ExprStatement extends LStatement{
         exprField.changed(() -> {
             expr = exprField.getText();
             try{
-                lastOps = ExprCompiler.compile(dest, expr);
+                //lastOps = ExprCompiler.compile(dest, expr); //inconsistência GAMER!
+                lastOps = ExprCompiler.compile(dest, expr, functionChecker());
                 lastError = null;
             }catch(Exception e){
                 // 输入中的语法错误，保留旧 lastOps，记录错误消息

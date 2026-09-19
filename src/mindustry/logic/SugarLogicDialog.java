@@ -1,5 +1,7 @@
 package mindustry.logic;
 
+import logicsugar.DebugConfig; //For debug!  
+import arc.util.Log;
 import arc.Core;
 import arc.func.Cons;
 import arc.func.Prov;
@@ -95,6 +97,7 @@ public class SugarLogicDialog extends LogicDialog{
     private String lastHistorySnap = "";
     private float historyTimer;
     private float historyIdle;
+    private boolean pollingHistory; //New Snapshots!!!1!1! :D
     private Button undoButton;
     private Button redoButton;
     /** Width used by the last desktop bottom-bar layout; changed after the dialog gets a real size. */
@@ -167,11 +170,11 @@ public class SugarLogicDialog extends LogicDialog{
                 installCompiledCopy();
                 installOriginalView();
             }
-            budgetTimer += Time.delta;
-            if(budgetTimer >= 24f){
-                budgetTimer = 0f;
-                refreshInstructionBudget();
-            }
+//            budgetTimer += Time.delta;
+//            if(budgetTimer >= 24f){ //I removed that part because it keeps regenerating the canvas unnecessarily.
+//                budgetTimer = 0f;
+//                refreshInstructionBudget();
+//            }
             historyTimer += Time.delta;
             if(historyTimer >= 8f){
                 historyTimer = 0f;
@@ -392,24 +395,58 @@ public class SugarLogicDialog extends LogicDialog{
         }
     }
 
-    private void pollCanvasHistory(){
-        if(history.isRestoring()) return;
-        try{
-            String now = canvas.save();
-            if(!now.equals(lastHistorySnap)){
-                lastHistorySnap = now;
-                historyIdle = 0f;
-            }else{
-                historyIdle += 8f;
-                if(historyIdle >= 24f){
-                    history.record(now);
-                    historyIdle = 0f;
-                    refreshHistoryButtons();
-                }
-            }
-        }catch(Throwable ignored){
-        }
-    }
+//    private void 
+//        if(history.isRestoring()) return;
+//        if(DebugConfig.DEBUG){
+//            Log.info("[History] pollCanvasHistory -> save()");
+//        }
+//        try{
+//            String now = canvas.save();
+//            if(!now.equals(lastHistorySnap)){
+//                lastHistorySnap = now;
+//                historyIdle = 0f;
+//            }else{
+//                historyIdle += 8f;
+//                if(historyIdle >= 24f){
+//                    history.record(now);
+//                    historyIdle = 0f;
+//                    refreshHistoryButtons();
+//                }
+//            }
+//        }catch(Throwable ignored){
+//        }
+//    }
+      private void pollCanvasHistory(){
+          if(history.isRestoring()) return;
+      }
+//    private void pollCanvasHistory(){
+//          if(history.isRestoring() || pollingHistory) return;
+//
+//          pollingHistory = true;
+//          try{
+//              if(DebugConfig.DEBUG){
+//                  Log.info("[History] pollCanvasHistory -> save()");
+//              }
+//
+//              String now = canvas.save();
+//
+//              if(!now.equals(lastHistorySnap)){
+//                  lastHistorySnap = now;
+//                  historyIdle = 0f;
+//              }else{
+//                  historyIdle += 8f;
+//
+//                  if(historyIdle >= 24f){
+//                      history.record(now);
+//                      historyIdle = 0f;
+//                      refreshHistoryButtons();
+//                  }
+//              }
+//          }catch(Throwable ignored){
+//          }finally{
+//              pollingHistory = false;
+//          }
+//    }
 
     private void applyHistory(String sugar){
         if(sugar == null) return;
@@ -444,19 +481,37 @@ public class SugarLogicDialog extends LogicDialog{
         if(redoButton != null) redoButton.setDisabled(!history.canRedo());
     }
 
+
     private void installBudgetLabel(){
-        if(buttons.find("instruction-budget") != null){
-            Element found = buttons.find("instruction-budget");
-            if(found instanceof Label label) budgetLabel = label;
-            return;
-        }
         budgetLabel = new Label("");
         budgetLabel.name = "instruction-budget";
         budgetLabel.setAlignment(arc.util.Align.left);
         budgetLabel.setWrap(true);
-        buttons.add(budgetLabel).name("instruction-budget").left().growX().padLeft(8f).minWidth(160f).height(40f);
-        refreshInstructionBudget();
+        buttons.add(budgetLabel)
+            .name("instruction-budget")
+            .left()
+            .growX()
+            .padLeft(8f)
+            .minWidth(160f)
+            .height(40f);
+
+        try{
+            refreshInstructionBudget(canvas.save());
+        }catch(Throwable ignored){
+      }
     }
+//        if(buttons.find("instruction-budget") != null){
+//            Element found = buttons.find("instruction-budget");
+//            if(found instanceof Label label) budgetLabel = label;
+//            return;
+//        }
+//        budgetLabel = new Label("");
+//        budgetLabel.name = "instruction-budget";
+//        budgetLabel.setAlignment(arc.util.Align.left);
+//        budgetLabel.setWrap(true);
+//        buttons.add(budgetLabel).name("instruction-budget").left().growX().padLeft(8f).minWidth(160f).height(40f);
+//        refreshInstructionBudget();
+//    }
 
     private void installEditHook(){
         Element candidate = buttons.find("edit");
@@ -1017,42 +1072,83 @@ public class SugarLogicDialog extends LogicDialog{
     }
 
     /** Recompiles the canvas and updates the live instruction-budget banner. */
-    private void refreshInstructionBudget(){
+    private void refreshInstructionBudget(String sugar){
         if(!isShown() || budgetLabel == null || canvas == null) return;
-        String sugar;
-        try{
-            sugar = canvas.save();
-        }catch(Throwable ignored){
-            return;
-        }
-        if(executor == null){
-            // 函数库会话不是一个处理器程序：1000 条处理器保存上限不适用，函数库有独立上限。
-            // 显示「库源码行数 / 函数库上限」，超限标红提示；仍然不写入 lastBudget，
-            // 因为关闭路径只对处理器会话做超限拦截（函数库保存由 FunctionLibrary.save 把关）。
 
+        if(executor == null){
             lastBudget = null;
+
             int libraryLines = SugarCompiler.emittedInstructionCount(sugar);
             boolean libraryOver = libraryLines > SugarFunctions.libraryInstructionLimit;
+
             budgetLabel.setText(Core.bundle.format(
                 libraryOver ? "logicsugar.budget.library.over" : "logicsugar.budget.library",
-                libraryLines, SugarFunctions.libraryInstructionLimit));
+                libraryLines, SugarFunctions.libraryInstructionLimit
+            ));
 
             budgetLabel.setColor(libraryOver ? Pal.remove : Color.lightGray);
             return;
         }
-        lastBudget = InstructionBudget.of(sugar, SugarCompiler.currentMode(),
-            effectiveLibrary.index, effectiveLibrary.text);
+
+        lastBudget = InstructionBudget.of(
+            sugar,
+            SugarCompiler.currentMode(),
+            effectiveLibrary.index,
+            effectiveLibrary.text
+        );
+
         int storage = compressedSize(lastBudget);
         updateBudgetLabel(storage);
+
         boolean over = lastBudget.over() || storageOver(storage);
+
         if(over && !budgetToastShown){
             budgetToastShown = true;
-            Vars.ui.showInfoFade(Core.bundle.format("logicsugar.budget.toast",
-                lastBudget.displayCount(), lastBudget.instructionLimit));
-        }
+            Vars.ui.showInfoFade(Core.bundle.format(
+                "logicsugar.budget.toast",
+                lastBudget.displayCount(),
+                lastBudget.instructionLimit
+            ));
+      }
+
         if(!over) budgetToastShown = false;
     }
-
+//    private void refreshInstructionBudget(){
+//        if(!isShown() || budgetLabel == null || canvas == null) return;
+//        String sugar;
+//        try{
+//            sugar = canvas.save();
+//        }catch(Throwable ignored){
+//            return;
+//        }
+//        if(executor == null){
+//            // 函数库会话不是一个处理器程序：1000 条处理器保存上限不适用，函数库有独立上限。
+//            // 显示「库源码行数 / 函数库上限」，超限标红提示；仍然不写入 lastBudget，
+//            // 因为关闭路径只对处理器会话做超限拦截（函数库保存由 FunctionLibrary.save 把关）。
+//
+//            lastBudget = null;
+//            int libraryLines = SugarCompiler.emittedInstructionCount(sugar);
+//            boolean libraryOver = libraryLines > SugarFunctions.libraryInstructionLimit;
+//            budgetLabel.setText(Core.bundle.format(
+//                libraryOver ? "logicsugar.budget.library.over" : "logicsugar.budget.library",
+//                libraryLines, SugarFunctions.libraryInstructionLimit));
+//
+//            budgetLabel.setColor(libraryOver ? Pal.remove : Color.lightGray);
+//            return;
+//        }
+//        lastBudget = InstructionBudget.of(sugar, SugarCompiler.currentMode(),
+//            effectiveLibrary.index, effectiveLibrary.text);
+//        int storage = compressedSize(lastBudget);
+//        updateBudgetLabel(storage);
+//        boolean over = lastBudget.over() || storageOver(storage);
+//        if(over && !budgetToastShown){
+//            budgetToastShown = true;
+//            Vars.ui.showInfoFade(Core.bundle.format("logicsugar.budget.toast",
+//                lastBudget.displayCount(), lastBudget.instructionLimit));
+//        }
+//        if(!over) budgetToastShown = false;
+//    }
+//
     private void updateBudgetLabel(int storage){
         if(budgetLabel == null || lastBudget == null) return;
         boolean over = lastBudget.over() || storageOver(storage);

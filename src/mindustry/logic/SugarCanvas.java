@@ -1,5 +1,7 @@
 package mindustry.logic;
 
+import logicsugar.DebugConfig;
+import arc.util.Log;
 import arc.Core;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
@@ -126,15 +128,47 @@ public class SugarCanvas extends LCanvas{
     private void loadSuper(String asm){
         super.load(asm);
     }
-
     @Override
     public String save(){
-        structure.refresh();
-        ExprHook.unfoldAll(this);
-        String result = super.save();
-        ExprHook.foldAll(this);
-        return result;
+        boolean previous = suppressHistory;
+        suppressHistory = true;
+
+        if(DebugConfig.DEBUG){
+            Log.info("[SugarCanvas] SAVE previousSuppressHistory=" + previous
+                + " -> suppressHistory=true"
+                + " statements=" + statements.getChildren().size);
+        }
+
+        try{
+            structure.refresh();
+            ExprHook.unfoldAll(this);
+            String result = super.save();
+            ExprHook.foldAll(this);
+            if(DebugConfig.DEBUG){
+                Log.info("[SugarCanvas] AFTER FOLD children="
+                    + statements.getChildren().size);
+
+                for(Element child : statements.getChildren()){
+                    if(child instanceof StatementElem elem){
+                        Log.info("[SugarCanvas] FOLD child="
+                            + elem.st.getClass().getName()
+                            + " id=" + System.identityHashCode(elem.st));
+                    }
+                }
+            }
+            return result;
+        }finally{
+            suppressHistory = previous;
+        }
     }
+//    @Override
+//    public String save(){ //bugged?
+//        structure.refresh();
+//        ExprHook.unfoldAll(this);
+//        String result = super.save();
+//        ExprHook.foldAll(this);
+//        return result;
+//    }
 
     @Override
     public void act(float delta){
@@ -450,12 +484,21 @@ public class SugarCanvas extends LCanvas{
 
     @Override
     public void add(LStatement statement){
+        if(DebugConfig.DEBUG){
+          Log.info("[SugarCanvas] ADD " + statement.getClass().getName()
+            + " id=" + System.identityHashCode(statement));
+        }
         statements.addChild(new SugarStatementElem(statement));
         notifyMutate();
     }
 
     @Override
     public void addAt(int at, LStatement statement){
+        if(DebugConfig.DEBUG){
+          Log.info("[SugarCanvas] ADD_AT at=" + at
+            + " " + statement.getClass().getName()
+            + " id=" + System.identityHashCode(statement));
+        }
         SugarStatementElem added = new SugarStatementElem(statement);
         statements.addChildAt(at, added);
 
@@ -514,9 +557,13 @@ public class SugarCanvas extends LCanvas{
 
         SugarStatementElem(LStatement statement){
             super(statement);
+            if(DebugConfig.DEBUG){
+              Log.info("[SugarElem] CREATED " + statement.getClass().getName()); //Debug
+            }
             foldHiddenSpace = -currentIdleSpace();
             background(new InsetDrawable(this, Tex.whitePane));
-            update(this::refreshInset);
+            //update(this::refreshInset); //Bugged?
+            refreshInset();
             if(statement instanceof BlockEndStatement && getCells().size > 1){
                 getCells().peek().height(0f).minHeight(0f).pad(0f);
                 getChildren().peek().visible = false;
@@ -559,6 +606,13 @@ public class SugarCanvas extends LCanvas{
         }
 
         void applyStructure(int depth, boolean hidden, boolean invalid){
+            if(DebugConfig.DEBUG){
+              Log.info("[SugarElem] APPLY "
+                      + st.getClass().getName()
+                      + " depth=" + depth
+                      + " hidden=" + hidden
+                      + " visibleBefore=" + visible);
+            }
             if(structureDepth != depth || foldedHidden != hidden || structureInvalid != invalid){
                 structureDepth = depth;
                 foldedHidden = hidden;
@@ -776,6 +830,11 @@ public class SugarCanvas extends LCanvas{
                 StatementElem old = (StatementElem)child;
                 LStatement statement = old.st;
                 SugarStatementElem replacement = new SugarStatementElem(statement);
+                if(DebugConfig.DEBUG){
+                  Log.info("[SugarCanvas] NORMALIZE i=" + i
+                    + " st=" + statement.getClass().getName()
+                    + " id=" + System.identityHashCode(statement));
+                }
                 statements.addChildAt(i, replacement);
                 old.remove();
             }
@@ -863,6 +922,26 @@ public class SugarCanvas extends LCanvas{
             assignRange(0, children.size, 0, false, false, children);
             statements.invalidateHierarchy();
             markJumpHeightsDirty(SugarCanvas.this);
+            if(DebugConfig.DEBUG){
+                Log.info("[Structure] AFTER REBUILD children=" + children.size);
+
+                for(int i = 0; i < children.size; i++){
+                    SugarStatementElem elem = (SugarStatementElem)children.get(i);
+
+                    Log.info("[Structure] i=" + i
+                        + " st=" + elem.st.getClass().getSimpleName()
+                        + " visible=" + elem.visible
+                        + " parent=" + (elem.parent != null)
+                        + " x=" + elem.x
+                        + " y=" + elem.y
+                        + " w=" + elem.getWidth()
+                        + " h=" + elem.getHeight()
+                        + " prefH=" + elem.getPrefHeight()
+                        + " depth=" + elem.structureDepth
+                        + " hidden=" + elem.foldedHidden
+                        + " invalid=" + elem.structureInvalid);
+                }
+            }
         }
 
         /** Match each closing block with the nearest still-open structured block. */
