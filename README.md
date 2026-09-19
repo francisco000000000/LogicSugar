@@ -1,11 +1,12 @@
 # Logic Sugar
+[![TestCompile LogicSugar](https://github.com/francisco000000000/LogicSugar/actions/workflows/build.yml/badge.svg)](https://github.com/francisco000000000/LogicSugar/actions/workflows/build.yml)
+[![Release LogicSugar](https://github.com/francisco000000000/LogicSugar/actions/workflows/release.yml/badge.svg)](https://github.com/francisco000000000/LogicSugar/actions/workflows/release.yml)
+![GitHub License](https://img.shields.io/github/license/francisco000000000/LogicSugar)
+<img alt="GitHub Downloads (all assets, latest release)" src="https://img.shields.io/github/downloads-pre/francisco000000000/LogicSugar/latest/total?label=Downloads&link=ugar%2Freleaseshttps%3A%2F%2Fgithub.com%2Ffrancisco000000000%2FLogicS">
+![GitHub Tag](https://img.shields.io/github/v/tag/francisco000000000/LogicSugar?include_prereleases&sort=date&style=flat)
 
-<h1 align="center">
-  <a href="https://github.com/DeterMination-Wind/LogicSugar/releases/latest"><img src="https://img.shields.io/github/v/release/DeterMination-Wind/LogicSugar?display_name=release&label=Latest%20Release&color=green"></a>
-  <a href="https://github.com/DeterMination-Wind/LogicSugar/releases"><img src="https://img.shields.io/github/downloads/DeterMination-Wind/LogicSugar/total?label=Downloads&color=blue"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/DeterMination-Wind/LogicSugar?label=License"></a>
-  <a href="https://github.com/DeterMination-Wind/LogicSugar"><img src="https://img.shields.io/github/stars/DeterMination-Wind/LogicSugar?style=flat&label=Star%20this%20mod!&color=yellow"></a>
-</h1>
+
+
 
 [中文](README_zh.md) | [English](README.md)
 
@@ -100,13 +101,13 @@ Prerequisites:
 
 - **Java 17+**
 - A built copy of the game sources next to this repository (compilation depends on `../Mindustry-master/desktop/build/libs/Mindustry.jar`)
-- For packaging the Android side, a local Android SDK with **D8** and at least one platform's `android.jar` (located via the `ANDROID_SDK_ROOT`, `ANDROID_HOME` or `D8_PATH` environment variable)
+~~- For packaging the Android side, a local Android SDK with **D8** and at least one platform's `android.jar` (located via the `ANDROID_SDK_ROOT`, `ANDROID_HOME` or `D8_PATH` environment variable)~~(It has not been tested for compilation on Android!)
 
-~~~powershell
-.\gradlew.bat deploy
+~~~bash
+.\gradlew jar
 ~~~
 
-Produces `build/libs/LogicSugar-v<version>.jar`, a cross-platform JAR for desktop and Android; the plain `build` task runs deploy as well.
+Produces `build/libs/LogicSugar-v<version>.jar`, a JAR for desktop; ~~the plain `build` task runs deploy as well.~~(Not tested yet!)
 
 ## Docs
 
