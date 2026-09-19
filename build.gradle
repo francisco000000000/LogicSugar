@@ -74,8 +74,37 @@ ext{
     isWindows = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("windows")
 }
 
+def mindustryJar = file(project.findProperty("mindustryJar") ?: "./mindustry.jar")
+def mindustryUrl = "https://github.com/Anuken/Mindustry/releases/latest/download/Mindustry.jar"
+
+tasks.register("downloadMindustry") {
+    outputs.file(mindustryJar)
+
+    doLast {
+        if(mindustryJar.exists()) {
+            println("Mindustry.jar already exists: ${mindustryJar}")
+            return
+        }
+
+        println("Downloading Mindustry.jar from latest release...")
+
+        mindustryJar.parentFile.mkdirs()
+
+        new URL(mindustryUrl).withInputStream { input ->
+            mindustryJar.withOutputStream { output ->
+                output << input
+            }
+        }
+
+        println("Mindustry.jar downloaded: ${mindustryJar.length()} bytes")
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    dependsOn(tasks.named("downloadMindustry"))
+}
+
 dependencies{
-    def mindustryJar = project.findProperty("mindustryJar") ?: "./mindustry.jar"
     compileOnly files(mindustryJar)
     testImplementation files(mindustryJar)
 }
