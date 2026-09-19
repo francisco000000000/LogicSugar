@@ -93,7 +93,7 @@ They compile exactly like the corresponding intrinsic (`lget(l, i)`, `speek(s)`,
 
 ## Install
 
-This **v5.1.0** release requires **Mindustry v160.1 or later** (desktop or Android). Download the universal JAR from [Releases](https://github.com/DeterMination-Wind/LogicSugar/releases) — a single file for both platforms — drop it into Mindustry's mods directory, enable it in the in-game mods list, then open the logic processor editor.
+This **v5.1.0** release requires **Mindustry v160.1 or later** (desktop or ~~Android~~). Download the universal JAR from [Releases]([https://github.com/DeterMination-Wind/LogicSugar/releases](https://github.com/francisco000000000/LogicSugar/releases)) — a single file for both platforms — drop it into Mindustry's mods directory, enable it in the in-game mods list, then open the logic processor editor.
 
 ## Build
 
