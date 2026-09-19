@@ -407,12 +407,8 @@ public class ExprHook{
             for(int k = 0; k < statements.size(); k++){
                 canvas.addAt(i + k, statements.get(k));
             }
-//            elem.remove();
-//            for(int k = 0; k < statements.size(); k++){
-//                canvas.addAt(i + k, statements.get(k));
-//            }
 
-            changed = true;
+           changed = true;
             i += statements.size() - 1;
         }
 
@@ -513,7 +509,6 @@ public class ExprHook{
         }
         if(line instanceof ExprCompiler.RawLine){
             return null; // 非断言 RawLine（当前不存在）：编辑器路径跳过，不崩溃
-                         //Why?
         }
         ExprCompiler.OpLine op = (ExprCompiler.OpLine)line;
         OperationStatement st = new OperationStatement();

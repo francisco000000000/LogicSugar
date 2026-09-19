@@ -168,7 +168,6 @@ public class ExprStatement extends LStatement{
         exprField.changed(() -> {
             expr = exprField.getText();
             try{
-                //lastOps = ExprCompiler.compile(dest, expr); //inconsistência GAMER!
                 lastOps = ExprCompiler.compile(dest, expr, functionChecker());
                 lastError = null;
             }catch(Exception e){

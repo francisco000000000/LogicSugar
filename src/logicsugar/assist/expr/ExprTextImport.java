@@ -163,35 +163,6 @@ public final class ExprTextImport{
                     expr.setupUI();
                     applied++;
                     continue;
-//                    if(DebugConfig.DEBUG){
-//                      Log.info("[ExprImport] BEFORE remove i=" + i
-//                          + " size=" + children.size
-//                          + " st=" + elem.st.getClass().getName());
-//
-//                      elem.remove();
-//
-//                      Log.info("[ExprImport] AFTER remove size=" + children.size);
-//
-//                      canvas.addAt(i, expr);
-//
-//                      Log.info("[ExprImport] AFTER add size=" + children.size
-//                          + " at=" + i
-//                          + " class=" + children.get(i).getClass().getName());
-//
-//                      if(children.get(i) instanceof StatementElem added){
-//                          Log.info("[ExprImport] ADDED st="
-//                              + added.st.getClass().getName()
-//                              + " dest=" + ((ExprStatement)added.st).dest
-//                              + " expr=" + ((ExprStatement)added.st).expr);
-//                      }
-//                    }
-//                    //--------------
-//                    elem.remove();
-//                    canvas.addAt(i, expr);
-//                    //canvas.statements.addAt(i, expr);
-//                    expr.setupUI();
-//                    applied++;
-//                    continue;
                 }
             }
             i++;

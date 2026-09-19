@@ -161,14 +161,6 @@ public class SugarCanvas extends LCanvas{
             suppressHistory = previous;
         }
     }
-//    @Override
-//    public String save(){ //bugged?
-//        structure.refresh();
-//        ExprHook.unfoldAll(this);
-//        String result = super.save();
-//        ExprHook.foldAll(this);
-//        return result;
-//    }
 
     @Override
     public void act(float delta){
@@ -562,7 +554,6 @@ public class SugarCanvas extends LCanvas{
             }
             foldHiddenSpace = -currentIdleSpace();
             background(new InsetDrawable(this, Tex.whitePane));
-            //update(this::refreshInset); //Bugged?
             refreshInset();
             if(statement instanceof BlockEndStatement && getCells().size > 1){
                 getCells().peek().height(0f).minHeight(0f).pad(0f);
